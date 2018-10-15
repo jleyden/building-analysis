@@ -1,6 +1,8 @@
 # XBOS Building Analysis
 
-This repo is for analysis of energy consumption of buildings using the eXtensible Building Operating System (XBOS).
+![](./building.png)
+
+This repo is for analysis of energy consumption of buildings using the eXtensible Building Operating System (XBOS). To learn more about XBOS, see the documentation [here](https://docs.xbos.io/).
 
 ## Status
 
