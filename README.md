@@ -25,8 +25,7 @@ This repo is for analysis of energy consumption of buildings using the eXtensibl
 1. Install the requirements
 2. Clone the repository
 3. Run `conda env create -f environment.yml`. This creates a new python environment called "mortar"
-4. Run `conda activate mortar` to start the environment shell.
-5. In `site-config.json`, replace `"site-name"` and `"meter-id"` to with the site and corresponding green button meter. You can add multiple sites & meters to this json file.
+4. Run `conda activate mortar` (windows) or `source activate mortar` (macOS/Linux) to start the environment shell.
 
 ### Test Functionality in Jupyter Notebook
 1. Inside the "mortar" environment, run `jupyter notebook`

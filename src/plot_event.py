@@ -10,26 +10,20 @@ import matplotlib
 from collect import get_weather_power_tstat
 import df_utils as du
 import baseline as bl
-
-
-sites = {
-    'Green_Button_Meter': {
-        'avenal-animal-shelter': 'f9ba6d7e-d730-31d7-95fb-d7ec0e4ab765',
-        'ciee': 'd3489cfa-93a5-37e7-a274-0f35cf17b782'
-    }
-}
-site_map = pd.DataFrame(sites)
+from get_greenbutton_id import get_greenbutton_id
 
 # Some functions for sampling from the csv
 
-def plot_event(site, event_day, baseline_start, baseline_end, event_start_h=14, event_end_h=18, meter_id=None):
+def plot_event(site, event_day, baseline_start, baseline_end, event_start_h=14, event_end_h=18):
+    meter_id = get_greenbutton_id(site, baseline_start, baseline_end)
+    meter_id = meter_id[0] # need a better way to aggregate meters
     event_day = pd.Timestamp(event_day)
     baseline_start_ts = pd.to_datetime(baseline_start)
     baseline_end_ts = pd.to_datetime(baseline_end)
     data = get_weather_power_tstat(site, baseline_start, baseline_end)
     power_gb = du.process_df(data['power'].df) * 4
     power_15min=power_gb[power_gb.index < event_day + pd.Timedelta(days=1)]
-    site_df, site_name = du._configure_MDAL_df(site, data, power_15min)
+    site_df, site_name = du._configure_MDAL_df(site, data, power_15min, meter_id)
     weather = du.process_df(data['weather'].df, Nmin="1h") 
 
     baseline_temp=[]
