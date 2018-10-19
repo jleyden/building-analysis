@@ -61,27 +61,32 @@ def plot_event(site, event_day, baseline_start, baseline_end, event_start_h=14, 
                         sampling="quarterly")
 
     upper=max(int(demand_baseline.T.max(axis=1)),int(demand_pivot[demand_pivot.index==event_day].max(axis=1).values))
-    ax4=demand_baseline.T.append(demand_pivot[demand_pivot.index==event_day]).T.plot(title=site+' DR Event',ylim=(0,upper*1.1), marker='o',figsize=(18,5),xticks=range(24))
-
+    ax4=demand_baseline.plot(
+        title=site+' DR Event',ylim=(0,upper*1.1), color='orange',
+        style='--',figsize=(18,5),xticks=range(24), label='baseline demand')
+    event_demand = demand_pivot[demand_pivot.index==event_day].T
+    plt.plot(demand_pivot[demand_pivot.index==event_day].T, marker='o', color='orange', label='event demand')
+    plt.legend()
     baseline_demand_3.append(demand_baseline.T)
     index_list.append(site)
     #plt.legend(['Baseline', 'Event', 'Temperature'], loc='center left')
     ax4.title.set_size(20)
 
-    plt.plot([event_start_h,event_start_h],[0,max(data['demand'])], color='r', linestyle = '-.')
-    p1 =plt.plot([event_end_h,event_end_h],[0,max(data['demand'])], color='r', linestyle = '-.')
+    plt.axvline(x=event_start_h, color='r', linestyle='--')
+    plt.axvline(x=event_end_h, color='r', linestyle='--')
+
     count+=1
     
     event_index=(str(event_day))[0:10]
     weather_site=weather_site[event_index:event_index]
     weather_event=weather_site
     weather_event=weather_event.set_index("hour")
-    p3 =weather_event.plot(ax=ax4, xticks=range(24),secondary_y=True, figsize=(18,5), marker='o', color='g', label="OAT Event")
+    p3 =weather_event.plot(ax=ax4, xticks=range(24),secondary_y=True, figsize=(18,5), marker='o', color='b', label="OAT Event")
     #plt.legend(['OAT Temperature Event'], loc='lower left')
 
     #plot OAT_baseline
     weather_baseline=bl.make_baseline(x_days, event_day, weather_pivot, name="OAT_Baseline", freq="1h")
-    weather_baseline.plot(ax=ax4, xticks=range(24),secondary_y=True, figsize=(18,5), marker='o', color='c', label="OAT Baseline")
+    weather_baseline.plot(ax=ax4, xticks=range(24),secondary_y=True, figsize=(18,5), color='b', style='--', label="OAT Baseline")
 
     #IAT Temperature baseline
     temperature_baseline=bl.make_baseline(x_days, event_day, temperature_pivot, name="IAT_Baseline")
