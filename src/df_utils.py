@@ -8,8 +8,6 @@ from collect import get_weather_power_tstat
 import matplotlib.pyplot as plt
 import matplotlib
 
-site_map = pd.read_json('../site-config.json')
-
 def _utc_to_local(data, local_zone="America/Los_Angeles"):
 
     try:
