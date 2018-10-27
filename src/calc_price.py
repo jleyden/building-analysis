@@ -29,6 +29,7 @@ def calc_total_price(power_vector, tariff_options, start_datetime, end_datetime,
         energy_vector = power_15min_to_hourly_energy(power_vector)
     else:
         energy_vector = power_vector
+    energy_vector = energy_vector / 1000
     tariff = OpenEI_tariff(tariff_options['utility_id'],
                   tariff_options['sector'],
                   tariff_options['tariff_rate_of_interest'], 
