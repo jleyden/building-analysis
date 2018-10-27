@@ -20,6 +20,11 @@ def event_table(site, event_day, baseline_start, baseline_end, event_start_h=14,
     baseline_start_ts = pd.to_datetime(baseline_start)
     baseline_end_ts = pd.to_datetime(baseline_end)
     data = get_weather_power_tstat(site, baseline_start, baseline_end)
+
+    dt = pd.to_datetime(event_day).replace(tzinfo=pytz.timezone('US/Pacific'))
+    heat_sp = data['heat setpoint'].df[data['heat setpoint'].df.index == dt]
+    cool_sp = data['cool setpoint'].df[data['cool setpoint'].df.index == dt]
+
     power_gb = du.process_df(data['power'].df) * 4
     power_15min=power_gb[power_gb.index < event_day + pd.Timedelta(days=1)]
     site_df, site_name = du._configure_MDAL_df(site, data, power_15min, meter_id)
@@ -74,6 +79,7 @@ def event_table(site, event_day, baseline_start, baseline_end, event_start_h=14,
     weather_baseline_15min = np.repeat(weather_baseline['OAT_Baseline'], 4)
     weather_event_15min = np.repeat(weather_event['OAT_Event'], 4)
 
+
     event_table = pd.DataFrame({
         'baseline-demand': demand_baseline.iloc[:, 0],
         'event-demand': event_demand.iloc[:, 0],
@@ -82,7 +88,12 @@ def event_table(site, event_day, baseline_start, baseline_end, event_start_h=14,
         'baseline-IAT': temperature_baseline.values,
         'event-IAT': event_temperature.iloc[:, 0]
     })
+    event_table.index = pd.date_range(start=event_day, periods=96, freq='15min' )
 
-    return event_table
+    return {
+        'df': event_table,
+        'hsp': heat_sp,
+        'csp': cool_sp #TODO: make this response a table again
+    }
 
 
