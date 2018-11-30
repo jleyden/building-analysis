@@ -10,13 +10,15 @@ from collect import get_weather_power_tstat
 import df_utils as du
 import baseline as bl
 from get_greenbutton_id import get_greenbutton_id
+import max_day as md
 
 # Some functions for sampling from the csv
 
-def event_table(site, event_day, baseline_start, baseline_end, event_start_h=14, event_end_h=18):
+def event_table(site, event_day, baseline_start, baseline_end, event_start_h=14, event_end_h=18, max_baseline=False):
     meter_id = get_greenbutton_id(site, baseline_start, baseline_end)
     meter_id = meter_id[0] # need a better way to aggregate meters
     event_day = pd.Timestamp(event_day)
+
     baseline_start_ts = pd.to_datetime(baseline_start)
     baseline_end_ts = pd.to_datetime(baseline_end)
     data = get_weather_power_tstat(site, baseline_start, baseline_end)
@@ -51,16 +53,31 @@ def event_table(site, event_day, baseline_start, baseline_end, event_start_h=14,
     heating_pivot = bl._create_pivot(heating)
     cooling_pivot = bl._create_pivot(cooling)
     weather_pivot= bl._create_pivot(weather_site, freq='1h')
+
+    # Get tariff information
+    tariffs = pd.read_csv('./tariffs.csv', index_col='meter_id')
+    tariff = tariffs.loc[meter_id]
+    utility_id = tariff['utility_id']
+
+    # Get previous event days
+    events = pd.read_json('./pricing/openei_tariff/PDP_events.json')
+    events_of_building = events[events['utility_id'] == utility_id]['start_date']
+    event_timestamps = [pd.to_datetime(date) for date in events_of_building]
+
+    Y=10
+
     demand_baseline, days, event_data, x_days= bl.get_X_in_Y_baseline(demand_pivot,
                         event_day,
                         X=X,
-                        Y=10, 
+                        Y=Y, 
                         event_start_h=event_start_h,
                         event_end_h=event_end_h, 
                         adj_ratio=True,
                         min_ratio=1.0, 
                         max_ratio=1.2,
-                        sampling="quarterly")
+                        sampling="quarterly",
+                        past_event_days=event_timestamps)
+
     event_demand = demand_pivot[demand_pivot.index==event_day].T
     baseline_demand_3.append(demand_baseline.T)
     index_list.append(site)
@@ -79,15 +96,38 @@ def event_table(site, event_day, baseline_start, baseline_end, event_start_h=14,
     weather_baseline_15min = np.repeat(weather_baseline['OAT_Baseline'], 4)
     weather_event_15min = np.repeat(weather_event['OAT_Event'], 4)
 
+    if max_baseline:
+        baseline_day = md.get_max_temp_day(baseline_start, baseline_end, site)
+        baseline_start = str(baseline_day.date()) + 'T00:00:00Z'
+        baseline_end = str((baseline_day + pd.DateOffset(2)).date()) + 'T00:00:00Z'
+        bl_data = get_weather_power_tstat(site, baseline_start, baseline_end)
+        #print(bl_data['power'].df.index)
+        daterange = pd.date_range(baseline_day.date(), (baseline_day + pd.DateOffset(1)).date(), freq='15min', tz='US/Pacific')[:-1]
+        bool_array = []
+        for i in bl_data['power'].df.index:
+            bool_array.append(i in set(daterange))
+        bl_demand = bl_data['power'].df.loc[daterange].mean(axis=1) * 4
+        bl_weather = bl_data['weather'].df.loc[daterange].mean(axis=1)
+        bl_iat = bl_data['temperature'].df.loc[daterange].mean(axis=1)
+        print(baseline_day)
+        event_table = pd.DataFrame({
+            'baseline-demand': bl_demand,
+            'event-demand': event_demand.iloc[:, 0].values,
+            'baseline-weather': bl_weather,
+            'event-weather': weather_event_15min.values,
+            'baseline-IAT': bl_iat,
+            'event-IAT': event_temperature.iloc[:, 0].values
+        })
+    else:
+        event_table = pd.DataFrame({
+            'baseline-demand': demand_baseline.iloc[:, 0],
+            'event-demand': event_demand.iloc[:, 0],
+            'baseline-weather': weather_baseline_15min.values,
+            'event-weather': weather_event_15min.values,
+            'baseline-IAT': temperature_baseline.values,
+            'event-IAT': event_temperature.iloc[:, 0]
+        })
 
-    event_table = pd.DataFrame({
-        'baseline-demand': demand_baseline.iloc[:, 0],
-        'event-demand': event_demand.iloc[:, 0],
-        'baseline-weather': weather_baseline_15min.values,
-        'event-weather': weather_event_15min.values,
-        'baseline-IAT': temperature_baseline.values,
-        'event-IAT': event_temperature.iloc[:, 0]
-    })
     event_table.index = pd.date_range(start=event_day, periods=96, freq='15min' )
 
     return {
