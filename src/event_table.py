@@ -14,7 +14,8 @@ import max_day as md
 
 # Some functions for sampling from the csv
 
-def event_table(site, event_day, baseline_start, baseline_end, event_start_h=14, event_end_h=18, max_baseline=False):
+def event_table(site, event_day, baseline_start, baseline_end,
+ event_start_h=14, event_end_h=18, max_baseline=False, agg='MAX', offset=0):
     meter_id = get_greenbutton_id(site, baseline_start, baseline_end)
     meter_id = meter_id[0] # need a better way to aggregate meters
     event_day = pd.Timestamp(event_day)
@@ -97,7 +98,8 @@ def event_table(site, event_day, baseline_start, baseline_end, event_start_h=14,
     weather_event_15min = np.repeat(weather_event['OAT_Event'], 4)
 
     if max_baseline:
-        baseline_day = md.get_max_temp_day(baseline_start, baseline_end, site)
+        baseline_day = md.get_max_temp_day(baseline_start, baseline_end, site, agg, offset)
+        badeline_day = str(baseline_day.date()) + 'T00:00:00Z'
         baseline_start = str(baseline_day.date()) + 'T00:00:00Z'
         baseline_end = str((baseline_day + pd.DateOffset(2)).date()) + 'T00:00:00Z'
         bl_data = get_weather_power_tstat(site, baseline_start, baseline_end)
@@ -109,7 +111,6 @@ def event_table(site, event_day, baseline_start, baseline_end, event_start_h=14,
         bl_demand = bl_data['power'].df.loc[daterange].mean(axis=1) * 4
         bl_weather = bl_data['weather'].df.loc[daterange].mean(axis=1)
         bl_iat = bl_data['temperature'].df.loc[daterange].mean(axis=1)
-        print(baseline_day)
         event_table = pd.DataFrame({
             'baseline-demand': bl_demand,
             'event-demand': event_demand.iloc[:, 0].values,

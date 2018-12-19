@@ -1,7 +1,7 @@
 import dataclient
 m = dataclient.MDALClient("corbusier.cs.berkeley.edu:8088")
 
-def get_max_temp_day(start_day, end_day, site, agg='MAX'):
+def get_max_temp_day(start_day, end_day, site, agg='MAX', offset=0):
     request = {
         "Variables": {
                 "weather": {
@@ -13,7 +13,7 @@ def get_max_temp_day(start_day, end_day, site, agg='MAX'):
             }   
         }
     request['Composition'] = ['weather']
-    request['Aggregation'] = {'weather': ['MAX']}
+    request['Aggregation'] = {'weather': [agg]}
     request['Time'] = {
         'Start': start_day,
         'End': end_day,
@@ -24,4 +24,5 @@ def get_max_temp_day(start_day, end_day, site, agg='MAX'):
     df = esp_weather.df
     mean = df.mean(axis=1)
     sorted_days = mean.sort_values(ascending=False)
-    return sorted_days.index[0]
+    print(offset)
+    return sorted_days.index[offset]
