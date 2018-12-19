@@ -39,12 +39,27 @@ def _create_pivot(data, freq="15min"):
     return data_pivot
 
 def _remove_event_day(data, event_day):
-    
+    '''
+    data: pandas df indexed by timestamp
+    event_day: pandas timestamp
+    '''
     try:
         data = data[~(data.index.date == event_day.date())]
         return data
     except:
         return data
+
+def _remove_event_days(data, event_days): 
+    '''
+    data: pandas df indexed by timestamp
+    event_days: list of pandas timestamps
+    '''
+    for event_day in event_days:
+        try:
+            data = data[~(data.index.date == event_day.date())]
+        except:
+            pass
+    return data
 
 def _remove_WE_holidays_NaN(data):
     
@@ -75,6 +90,7 @@ def _get_X_in_Y(data, X=None, event_start_h=14, event_end_h=18, include_last=Fal
         X=data.shape[0]
     
     cols = range(event_start_h, event_end_h+include_last*1)
+    sorted_days = data.iloc[:, cols].sum(axis=1).sort_values(ascending=False)
     x_days = data.iloc[:, cols].sum(axis=1).sort_values(ascending=False)[0:X].index
     
     #print ('get x in y', data[data.index.isin(x_days)] )
@@ -108,17 +124,22 @@ def get_X_in_Y_baseline(data,
                         adj_ratio=True,
                         min_ratio=1.0, 
                         max_ratio=1.2,
-                        sampling="quarterly"):
+                        sampling="quarterly",
+                        past_event_days=None,
+                        max_day=None):
     '''
     X, Y 3 of 10: 
     
     '''
     event_data= data[data.index.date == event_day.date()]
     
-    data = _remove_event_day(data, event_day) #NOTE: Not sure why we are removing the event day
+    data = _remove_event_day(data, event_day)
+    if past_event_days:
+        data = _remove_event_days(data, past_event_days)
+    if max_day:
+        data = data[data.index.date == max_day.date()]
     data = _remove_WE_holidays_NaN(data)
     data = _get_last_Y_days(data, Y)
-
     days = data.index
     data, x_days = _get_X_in_Y(data, 
                        X=X, 
