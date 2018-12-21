@@ -38,7 +38,7 @@ def calc_total_price(power_vector, tariff_options, start_datetime, end_datetime,
                   tariff_options['tou'])
     
     tariff.read_from_json()
-    tariff_struct_from_openei_data(tariff, calculator, pdp_event_filenames='PDP_events.json')
+    # tariff_struct_from_openei_data(tariff, calculator, pdp_event_filenames='PDP_events.json')
     pd_prices, map_prices = calculator.get_electricity_price(timestep=TariffElemPeriod.HOURLY,
                                                         range_date=(start_datetime.replace(tzinfo=pytz.timezone('US/Pacific')),
                                                                     end_datetime.replace(tzinfo=pytz.timezone('US/Pacific'))))
