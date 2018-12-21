@@ -130,6 +130,7 @@ def event_table(site, event_day, baseline_start, baseline_end,
         })
 
     event_table.index = pd.date_range(start=event_day, periods=96, freq='15min' )
+    print(len(event_table))
 
     return {
         'df': event_table,
